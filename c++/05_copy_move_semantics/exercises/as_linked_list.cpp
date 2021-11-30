@@ -2,6 +2,8 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <vector>
+
 
 enum class method { push_back, push_front };
 

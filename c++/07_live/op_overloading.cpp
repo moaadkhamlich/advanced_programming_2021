@@ -78,10 +78,12 @@ class Matrix {
   }
 
   friend Matrix operator+(Matrix&& a, const Matrix& b) {
+    std::cout << "move sum" << std::endl;
     return std::forward<Matrix>(a += b);
   }
 
   friend Matrix operator+(const Matrix& a, const Matrix& b) {
+    std::cout << "copy sum" << std::endl;
     AP_ASSERT_EQ(a._rows, b._rows);
     AP_ASSERT_EQ(a._cols, b._cols);
 
@@ -95,13 +97,12 @@ class Matrix {
 };
 
 int main() {
-  constexpr std::size_t N{20'000};
+  constexpr std::size_t N{10};
   Matrix<int> m1{N};
   for (std::size_t i = 0; i < N * N; ++i) {
     m1[i] = 1;
   }
 
-  // ...
   auto t0 = std::chrono::high_resolution_clock::now();
   auto res = m1 + m1 + m1 + m1 + m1 + m1 + m1 + m1 + m1 + m1;
   auto t1 = std::chrono::high_resolution_clock::now();
