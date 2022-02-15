@@ -6,9 +6,8 @@
 
 template <typename P, typename T>
 class _iterator {
-  using typename P::N;
-  using typename P::node_t;
-  N current;
+  using stack_type = typename P::stack_type;
+  stack_type current;
   P* pool;
 
  public:
@@ -17,11 +16,12 @@ class _iterator {
   using pointer = value_type*;
   using difference_type = std::ptrdiff_t;
   using iterator_category = std::forward_iterator_tag;
+  ~_iterator() noexcept {}
 
-  _iterator(P* p, N nd) : pool(p), current(nd){};
+  _iterator(P* p, stack_type nd) : current(nd), pool(p){};
 
   _iterator& operator++() {  // pre-increment
-    current = pool->next;
+    current = pool->next(current);
     return *this;
   }
 
@@ -32,6 +32,7 @@ class _iterator {
   }
 
   reference operator*() { return pool->value(current); }
+  typename P::node_t* operator->() { return &(pool->node(current)); }
 
   friend bool operator==(const _iterator& a, const _iterator& b) {
     return (a.current == b.current);
@@ -49,35 +50,40 @@ class stack_pool {
     N next;
     node_t(const T& x, N nxt) : value{x}, next{nxt} {};
     node_t(T&& x, N nxt) : value{std::move(x)}, next{nxt} {};
+    explicit node_t(N nxt) : next{nxt} {};
   };
-  std::vector<node_t> pool;
   using stack_type = N;
   using value_type = T;
+  std::vector<node_t> pool;
   using size_type = typename std::vector<node_t>::size_type;
   stack_type free_nodes;  // at the beginning, it is empty
 
   node_t& node(stack_type x) noexcept { return pool[x - 1]; }
   const node_t& node(stack_type x) const noexcept { return pool[x - 1]; }
 
+  template <typename P_, typename T_>
+  friend class _iterator;
+
  public:
   stack_pool() : free_nodes{stack_type{0}} {};
 
-  explicit stack_pool(size_type n) {
+  explicit stack_pool(size_type n): stack_pool() {
     pool.reserve(n);
   }  // reserve n nodes in the pool
 
-  using iterator = _iterator<stack_pool<T,N>, T>;
-  using const_iterator = _iterator<stack_pool<T,N>, const T>;
+  using iterator = _iterator<stack_pool<T, N>, T>;
+  using const_iterator = _iterator<stack_pool<T, N>, const T>;
 
+  iterator begin(stack_type x) { return iterator(this, x); };
+  iterator end(stack_type) {
+    return iterator(this, end());
+  };  // this is not a typo
 
-   iterator begin(stack_type x) {return iterator(this,x);};
-   iterator end(stack_type ) {return iterator(this,end());}; // this is not a typo
+  const_iterator begin(stack_type x) const { return const_iterator(this, x); };
+  const_iterator end(stack_type) const { return const_iterator(this, end()); };
 
-   const_iterator begin(stack_type x) const {return const_iterator(this,x);};
-   const_iterator end(stack_type ) const {return const_iterator(this,end());};
-
-   const_iterator cbegin(stack_type x) const;
-   const_iterator cend(stack_type ) const;
+  const_iterator cbegin(stack_type x) const;
+  const_iterator cend(stack_type) const;
 
   stack_type new_stack() { return end(); };  // return an empty stack
 
@@ -102,15 +108,18 @@ class stack_pool {
   };
 
   stack_type push(const T& val, stack_type head) {
-    if (!empty(free_nodes)) {
-      auto new_head = free_nodes;
-      free_nodes = next(free_nodes);
-      value(new_head) = val;
-      next(new_head) = head;
-      return new_head;
+    if (empty(free_nodes)) {
+      pool.push_back(node_t(end()));
+      free_nodes = pool.size();
     }
-    node_t new_node(val, head);
-    return stack_type(pool.size());
+    auto new_head = free_nodes;
+    free_nodes = next(free_nodes);
+    value(new_head) = val;
+    next(new_head) = head;
+    return new_head;
+    // node_t new_node(val, head);
+    // pool.push_back(new_node);
+    // return stack_type(pool.size());
   }
 
   // stack_type push(T&& val, stack_type head);
@@ -122,8 +131,16 @@ class stack_pool {
     return new_head;
   };  // delete first node
 
-  stack_type free_stack(
-      stack_type
-          x);  // to be done with iterators: we need to find bottom of the stack
-               // and make it point to head of the stack we want to empty
+  // we need to find the bottom
+  stack_type free_stack(stack_type x) {
+    if (empty(x))
+      return x;
+
+    iterator bottom = begin(x);
+    for (; bottom->next != end(); ++bottom)
+      ;
+    bottom->next = free_nodes;
+    free_nodes = x;
+    return end();
+  };
 };
