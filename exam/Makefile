@@ -22,7 +22,7 @@ check: tests.x
 %.x:
 	$(CXX) $^ -o $@
 
-%.o: %.cpp 
+%.o: %.cpp
 	$(CXX) $< -o $@ $(CXXFLAGS) -c
 
 format: $(SRC)
@@ -34,6 +34,10 @@ clean:
 	rm -f $(EXE) *~ *.o
 
 .PHONY: clean
+
+distclean: clean
+	$(RM) $(EXE)
+	$(RM) *~
 
 tests.x : tests_main.o tests.o
 
