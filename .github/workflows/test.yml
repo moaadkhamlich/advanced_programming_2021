@@ -1,0 +1,17 @@
+name: Unit testing of STACK POOL
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+ build-test:
+   runs-on: ubuntu-latest
+   steps:
+   - name: checkout repo
+     uses: actions/checkout@v2
+   - name: build test
+     working-directory: ./exam
+     run: make check
