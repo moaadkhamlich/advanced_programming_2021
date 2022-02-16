@@ -4,6 +4,12 @@
 #include <utility>
 #include <vector>
 
+/// \file
+/// Header file of the stack_pool class.
+/// \dir
+/// Directory containing the header and source files for the stack_pool<T,N>
+/// class.
+
 template <typename P, typename T>
 class _iterator {
   using stack_type = typename P::stack_type;
@@ -43,11 +49,27 @@ class _iterator {
   }
 };
 
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+/*---------------------------------------------------------------------------*\
+                        Class template stack_pool<T,N>
+\*---------------------------------------------------------------------------*/
+
+///The pool stores each node in a std::vector<node_t>. The "address" of a node is 1+idx, where idx is the index where the node is stored in the vector. This trick allows us to use address 0 as end, so we can use unsigned integers type. The first node stored in the vector will be put at idx == 0, but it will be referenced as 1.
+
+/** prova generazione documentazione */
+
 template <typename T, typename N = std::size_t>
 class stack_pool {
+  // private members
+ private:
+  /// struct that implements the concept of a node in the stack data structure
   struct node_t {
+    /// the value of a node
     T value;
+    /// the index pointing to the next node
     N next;
+    /// contractor taking a value, and an index to the next element
     node_t(const T& x, N nxt) : value{x}, next{nxt} {};
     node_t(T&& x, N nxt) : value{std::move(x)}, next{nxt} {};
     explicit node_t(N nxt) : next{nxt} {};
@@ -80,9 +102,15 @@ class stack_pool {
  public:
   stack_pool() : free_nodes{stack_type{0}} {};
 
-  explicit stack_pool(size_type n): stack_pool() {
+  explicit stack_pool(size_type n) : stack_pool() {
     pool.reserve(n);
   }  // reserve n nodes in the pool
+
+  template <typename L>
+  stack_type create_pool(L list) {
+    for (auto&& x : list)
+      push(std::move(x));
+  }
 
   using iterator = _iterator<stack_pool<T, N>, T>;
   using const_iterator = _iterator<stack_pool<T, N>, const T>;
@@ -95,8 +123,9 @@ class stack_pool {
   const_iterator begin(stack_type x) const { return const_iterator(this, x); };
   const_iterator end(stack_type) const { return const_iterator(this, end()); };
 
-  const_iterator cbegin(stack_type x) const;
-  const_iterator cend(stack_type) const;
+  // const iterator cbegin and cend
+  const_iterator cbegin(stack_type x) const { return const_iterator(this, x); };
+  const_iterator cend(stack_type) const { return const_iterator(this, end()); };
 
   stack_type new_stack() { return end(); };  // return an empty stack
 
@@ -111,7 +140,6 @@ class stack_pool {
   bool empty(stack_type x) const noexcept { return x == end(); };
 
   stack_type end() const noexcept { return stack_type(0); }
-
 
   T& value(stack_type x) { return node(x).value; };
   const T& value(stack_type x) const { return node(x).value; };

@@ -19,8 +19,8 @@ jobs:
     - name: Doxygen Action
       uses: mattnotmitt/doxygen-action@v1.1.0
       with:
-          doxyfile-path: ./Doxyfile
-          working-directory: exam/docs
+          doxyfile-path: './Doxygen/doxy.in'
+          working-directory: 'exam/docs'
 
 
     - uses: actions/upload-artifact@v2
