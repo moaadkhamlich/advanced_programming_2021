@@ -64,6 +64,19 @@ class stack_pool {
   template <typename P_, typename T_>
   friend class _iterator;
 
+  template <typename X>
+  stack_type push_universal(X&& val, stack_type head) {
+    if (empty(free_nodes)) {
+      pool.push_back(std::move(node_t(end())));
+      free_nodes = pool.size();
+    }
+    auto new_head = free_nodes;
+    free_nodes = next(free_nodes);
+    value(new_head) = std::forward<X>(val);
+    next(new_head) = head;
+    return new_head;
+  }
+
  public:
   stack_pool() : free_nodes{stack_type{0}} {};
 
@@ -95,9 +108,10 @@ class stack_pool {
     return pool.capacity();
   };  // the capacity of the pool
 
-  bool empty(stack_type x) const { return x == end(); };
+  bool empty(stack_type x) const noexcept { return x == end(); };
 
   stack_type end() const noexcept { return stack_type(0); }
+
 
   T& value(stack_type x) { return node(x).value; };
   const T& value(stack_type x) const { return node(x).value; };
@@ -107,22 +121,13 @@ class stack_pool {
     return const_cast<stack_type>(node(x).next);
   };
 
-  stack_type push(const T& val, stack_type head) {
-    if (empty(free_nodes)) {
-      pool.push_back(node_t(end()));
-      free_nodes = pool.size();
-    }
-    auto new_head = free_nodes;
-    free_nodes = next(free_nodes);
-    value(new_head) = val;
-    next(new_head) = head;
-    return new_head;
-    // node_t new_node(val, head);
-    // pool.push_back(new_node);
-    // return stack_type(pool.size());
-  }
+  stack_type push(T&& val, stack_type head) {
+    return push_universal(std::move(val), head);
+  };
 
-  // stack_type push(T&& val, stack_type head);
+  stack_type push(const T& val, stack_type head) {
+    return push_universal(val, head);
+  };
 
   stack_type pop(stack_type x) {
     auto new_head = next(x);
