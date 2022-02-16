@@ -112,51 +112,9 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # Configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ../stack_pool.hpp
+INPUT                  = ../readme.md ../stack_pool.hpp
+USE_MDFILE_AS_MAINPAGE = ../readme.md
 INPUT_ENCODING         = UTF-8
-#FILE_PATTERNS          = *.c \
-                         #*.cc \
-                         #*.cxx \
-                         #*.c++ \
-                         #*.java \
-                         #*.ii \
-                         #*.ixx \
-                         #*.ipp \
-                         #*.i++ \
-                         #*.inl \
-                         #*.idl \
-                         #*.ddl \
-                         #*.odl \
-                         #*.h \
-                         #*.hh \
-                         #*.hxx \
-                         #*.hpp \
-                         #*.h++ \
-                         #*.cs \
-                         #*.d \
-                         #*.php \
-                         #*.php4 \
-                         #*.php5 \
-                         #*.phtml \
-                         #*.inc \
-                         #*.m \
-                         #*.markdown \
-                         #*.md \
-                         #*.mm \
-                         #*.dox \
-                         #*.py \
-                         #*.pyw \
-                         #*.f90 \
-                         #*.f95 \
-                         #*.f03 \
-                         #*.f08 \
-                         #*.f \
-                         #*.for \
-                         #*.tcl \
-                         #*.vhd \
-                         #*.vhdl \
-                         #*.ucf \
-                         #*.qsf
 RECURSIVE              = NO
 EXCLUDE                = ./../catch.hpp ./../*.cpp
 EXCLUDE_SYMLINKS       = NO
@@ -170,7 +128,6 @@ INPUT_FILTER           =
 FILTER_PATTERNS        =
 FILTER_SOURCE_FILES    = NO
 FILTER_SOURCE_PATTERNS =
-USE_MDFILE_AS_MAINPAGE =
 #---------------------------------------------------------------------------
 # Configuration options related to source browsing
 #---------------------------------------------------------------------------

@@ -1,0 +1,9 @@
+*.x.dSYM
+*.x
+*.exe
+*.o
+**/html
+**/html*
+**/latex
+**/latex*
+
