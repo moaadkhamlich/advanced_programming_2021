@@ -1,17 +1,15 @@
 #include "catch.hpp"
 
 #include "stack_pool.hpp"
-#include <algorithm> // max_element, min_element
+#include <algorithm>  // max_element, min_element
 
-SCENARIO("getting confident with the addresses"){
+SCENARIO("getting confident with the addresses") {
   stack_pool<int, std::size_t> pool{16};
   auto l = pool.new_stack();
 
-  REQUIRE( l == 0);
-  l = pool.push(42,l);
-  REQUIRE( l == std::size_t(1));
-  
-
+  REQUIRE(l == 0);
+  l = pool.push(42, l);
+  REQUIRE(l == std::size_t(1));
 }
 
 SCENARIO("basic operations on stack") {
@@ -20,23 +18,22 @@ SCENARIO("basic operations on stack") {
 
     GIVEN("a new stack") {
       auto l = pool.new_stack();
-      
+
       THEN("the stack is empty")
-	REQUIRE(pool.empty(l));
+      REQUIRE(pool.empty(l));
 
       WHEN("we add one value") {
         l = pool.push(1, l);
         REQUIRE(pool.value(l) == 1);
-      
 
-	WHEN("we delete the only node") {
-	  l = pool.pop(l);
-	  THEN("the stack is empty again")
-	    REQUIRE(pool.empty(l));
+        WHEN("we delete the only node") {
+          l = pool.pop(l);
+          THEN("the stack is empty again")
+          REQUIRE(pool.empty(l));
 
-	  //empty stacks point to pool.end()
-	  REQUIRE(l == pool.end());
-	}
+          // empty stacks point to pool.end()
+          REQUIRE(l == pool.end());
+        }
       }
 
       WHEN("we add two values") {
@@ -125,8 +122,8 @@ SCENARIO("using nodes of a deleted stack") {
   }
 }
 
-SCENARIO("using iterators"){
-  GIVEN("two stacks"){
+SCENARIO("using iterators") {
+  GIVEN("two stacks") {
     stack_pool<int, uint16_t> pool{};
     auto l1 = pool.new_stack();
     // credits: pi as random number generator :)
@@ -141,7 +138,7 @@ SCENARIO("using iterators"){
     l1 = pool.push(5, l1);
     l1 = pool.push(3, l1);
     l1 = pool.push(5, l1);
-    
+
     auto l2 = pool.new_stack();
     l2 = pool.push(8, l2);
     l2 = pool.push(9, l2);
@@ -155,17 +152,47 @@ SCENARIO("using iterators"){
     l2 = pool.push(9, l2);
     l2 = pool.push(7, l2);
 
-    THEN("find the max on l1"){
+    THEN("find the max on l1") {
       auto m = std::max_element(pool.begin(l1), pool.end(l1));
       REQUIRE(*m == 9);
     }
 
-    THEN("find the min on l2"){
+    THEN("find the min on l2") {
       auto m = std::min_element(pool.begin(l2), pool.end(l2));
       REQUIRE(*m == 1);
     }
-    
-    
   }
+}
 
+SCENARIO("creating stack pool from a generic container") {
+  WHEN("we create a stack from a vector") {
+    stack_pool<int, std::size_t> pool{16};
+    std::vector<int> stack{1, 2, 3, 4};
+    std::size_t head{0};
+    head = pool.add_stack(stack, head);
+
+    THEN("we expect the head to be the last element of the vector")
+    REQUIRE(pool.value(head) == 4);
+
+    WHEN("we delete the top of the stack") {
+      head = pool.pop(head);
+      THEN("the new top if the following element in the vector")
+      REQUIRE(pool.value(head) == 3);
+    }
+  }
+}
+
+SCENARIO("initializing stack pool from an initializer list") {
+  WHEN("we create a stack from an initializer list") {
+    std::size_t head(0);
+    stack_pool<int, std::size_t> pool({1, 2, 3}, head);
+    THEN("we expect the head to be the last element of the initializer list")
+    REQUIRE(pool.value(head) == 3);
+
+    WHEN("we delete the top of the stack") {
+      head = pool.pop(head);
+      THEN("the new top if the following element in the initializer list")
+      REQUIRE(pool.value(head) == 2);
+    }
+  }
 }
