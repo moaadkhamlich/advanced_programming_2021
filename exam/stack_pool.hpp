@@ -1,4 +1,5 @@
 // relevant headers
+#include <iostream>
 #include <iterator>
 #include <vector>
 
@@ -17,12 +18,10 @@
 /** @brief The class _iterator is used as an iterator for accessing the elements
     elements of a stack within stack_pool.
 
-    The class _iterator is used as an iterator for accessing the elements
-    of a stack within stack_pool. This is done using as template
-    parameters, the stack_pool type and the value type of value stored in each
-    node of the stacks, which however does not match the template parameter of
-    stack_pool<T,N>, in fact the difference may reside in the const
-    attribute, that allows to obtain const_iterator */
+    This is done using as template parameters, the stack_pool type and the value
+    type of value stored in each node of the stacks, which however does not
+    match the template parameter of stack_pool<T,N>, in fact the difference may
+    reside in the const attribute, that allows to obtain const_iterator */
 
 template <typename P, typename T>
 class _iterator {
@@ -148,13 +147,11 @@ class _iterator {
                         Class template stack_pool<T,N>
 \*---------------------------------------------------------------------------*/
 
-/// The pool stores each node in a std::vector<node_t>. The "address" of a
-/// node is 1+idx, where idx is the index where the node is stored in the
-/// vector. This trick allows us to use address 0 as end, so we can use
-/// unsigned integers type. The first node stored in the vector will be put at
-/// idx == 0, but it will be referenced as 1.
-
-/** prova generazione documentazione */
+/** The pool stores each node in a std::vector<node_t>. The "address" of a
+node is 1+idx, where idx is the index where the node is stored in the
+vector. This trick allows us to use address 0 as end, so we can use
+unsigned integers type. The first node stored in the vector will be put at
+idx == 0, but it will be referenced as 1.*/
 
 template <typename T, typename N = std::size_t>
 class stack_pool {
@@ -166,9 +163,12 @@ class stack_pool {
     T value;
     /// the index pointing to the next node
     N next;
-    /// contractor taking a value, and an index to the next element
+    /// constructor taking a value, and an index to the next element
     node_t(const T& x, N nxt) : value{x}, next{nxt} {};
+    /// move constructor taking a value, and an index to the next element
     node_t(T&& x, N nxt) : value{std::move(x)}, next{nxt} {};
+    /// constructor used to create a node by using only the index to the next
+    /// node: this is used within the function push_universal
     explicit node_t(N nxt) : next{nxt} {};
   };
 
@@ -198,9 +198,38 @@ class stack_pool {
   /// vector::operator[] may throw
   const node_t& node(stack_type x) const { return pool[x - 1]; }
 
+  /// friend class _iterator.
+  /// I had to define it as friend in order to access the private typenames.
   template <typename P_, typename T_>
   friend class _iterator;
 
+  /// function used to push a universal reference on top of the stack
+  /// pointed by the head index.
+  /// The strategy I have used is to ALWAYS use the free_nodes stack to
+  /// add the new node. In particular if the free_nodes stack is empty, we
+  /// create a temporary node_t which is pushed on top of that stack.
+  /// We are not checking that the head is associated to a valid stack_type
+  /// one possible way to do so is given by the following implementation:\n
+  /// template <typename X>\n
+  /// stack_type push_universal(X&& val, stack_type head) {\n
+  ///   try {\n
+  ///     begin(head);\n
+  ///     if (empty(free_nodes)) {\n
+  ///       pool.push_back(std::move(node_t(end())));\n
+  ///       free_nodes = pool.size();\n
+  ///     }\n
+  ///     auto new_head = free_nodes;\n
+  ///     free_nodes = next(free_nodes);\n
+  ///     value(new_head) = std::forward<X>(val);\n
+  ///     next(new_head) = head;\n
+  ///     return new_head;\n
+  ///   } catch (const std::exception exc) {\n
+  ///     std::cerr << exc.what() << std::endl;\n
+  ///     return end();\n
+  ///   }\n
+  /// }\n
+  /// @param val Value to be pushed
+  /// @param head Stack on top of which the pushed is performed
   template <typename X>
   stack_type push_universal(X&& val, stack_type head) {
     if (empty(free_nodes)) {
@@ -215,77 +244,112 @@ class stack_pool {
   }
 
  public:
+  /// Default constructor: I have to initialize the free nodes stack.
   stack_pool() : free_nodes{stack_type{0}} {};
 
-  explicit stack_pool(size_type n) : stack_pool() {
-    pool.reserve(n);
-  }  // reserve n nodes in the pool
-
-  template <typename L>
-  stack_type create_pool(L list) {
-    for (auto&& x : list)
-      push(std::move(x));
-  }
+  /// User define constructor which reserve the desired capacity of the
+  /// stack_pool object.
+  explicit stack_pool(size_type n) : stack_pool() { pool.reserve(n); }
 
   using iterator = _iterator<stack_pool<T, N>, T>;
   using const_iterator = _iterator<stack_pool<T, N>, const T>;
 
+  /// iterator which point to the beginning of the provided stack.
+  /// this cannot be marked as noexcept because the constructor of iterator may
+  /// throw.
   iterator begin(stack_type x) { return iterator(this, x); };
-  iterator end(stack_type) {
-    return iterator(this, end());
-  };  // this is not a typo
 
+  /// iterator which point to the end of the provided stack.
+  /// this method is noexcept because _iterator(P* p, stack_type nd) cannot
+  /// throw when pool.empty(nd)=True.
+  iterator end(stack_type) { return iterator(this, end()); };
+
+  /// const iterator which point to the beginning of the provided stack.
+  /// this cannot be marked as noexcept because the constructor of iterator may
+  /// throw.
   const_iterator begin(stack_type x) const { return const_iterator(this, x); };
+  /// const iterator which point to the end of the provided stack.
+  /// this method is noexcept because _iterator(P* p, stack_type nd) cannot
+  /// throw when pool.empty(nd)=True.
   const_iterator end(stack_type) const { return const_iterator(this, end()); };
 
-  // const iterator cbegin and cend
+  /// const iterator which point to the beginning of the provided stack.
+  /// this cannot be marked as noexcept because the constructor of iterator may
+  /// throw.
   const_iterator cbegin(stack_type x) const { return const_iterator(this, x); };
+  /// const iterator which point to the end of the provided stack.
+  /// this method is noexcept because _iterator(P* p, stack_type nd) cannot
+  /// throw when pool.empty(nd)=True.
   const_iterator cend(stack_type) const { return const_iterator(this, end()); };
 
-  stack_type new_stack() { return end(); };  // return an empty stack
+  /// Method which returns an empty stack, cannot throw.
+  stack_type new_stack() noexcept { return end(); };
 
-  void reserve(size_type n) {
-    pool.reserve(n);
-  };  // reserve n nodes in the pool
+  /// Memory allocation forecasting future pushs. This method can throw because
+  /// of the underlying use of std::vector::reserve which can throw
+  void reserve(size_type n) { pool.reserve(n); };
 
-  size_type capacity() const {
-    return pool.capacity();
-  };  // the capacity of the pool
+  /// The capacity of the pool.
+  size_type capacity() const noexcept { return pool.capacity(); };
 
+  /// Check if the given stack is empty (points to the end==stack_type(0)).
   bool empty(stack_type x) const noexcept { return x == end(); };
 
+  /// Index referring to  the end of all the stacks.
   stack_type end() const noexcept { return stack_type(0); }
 
+  /// The value stored in the node pointed by the given index. May throw an
+  /// exception if stack_pool.node(x) does.
   T& value(stack_type x) { return node(x).value; };
+
+  /// The const value stored in the node pointed by the given index. May throw
+  /// an exception if stack_pool.node(x) does.
+
   const T& value(stack_type x) const { return node(x).value; };
 
+  /// The index of the next node in the stack. May throw an exception if
+  /// stack_pool.node(x) does.
   stack_type& next(stack_type x) { return node(x).next; }
+
+  /// The const index of the next node in the stack. May throw an exception if
+  /// stack_pool.node(x) does.
   const stack_type& next(stack_type x) const {
     return const_cast<stack_type>(node(x).next);
   };
 
+  /// Pushing an rvalue reference on top of the given stack. May throw an
+  /// exception if push_universal does.
   stack_type push(T&& val, stack_type head) {
     return push_universal(std::move(val), head);
   };
 
+  /// Pushing an lvalue reference on top of the given stack. May throw an
+  /// exception if push_universal does.
   stack_type push(const T& val, stack_type head) {
     return push_universal(val, head);
   };
 
+  /// Removing the top of the current stack and adding it to free_nodes.
+  /// Returning the new head of the provided stack. May throw an exception if
+  /// next(x) does.
   stack_type pop(stack_type x) {
+    // assigning the new head
     auto new_head = next(x);
+    // deleting the top of the stack, i.e. assigning it to free_nodes
     next(x) = free_nodes;
     free_nodes = x;
+    // returning the new top of the given stack
     return new_head;
-  };  // delete first node
+  };
 
-  // we need to find the bottom
+  /// This method free the entire given stack, i.e. it assigns its node to the
+  /// free_nodes one. It may throw an exception if the given head is not valid.
   stack_type free_stack(stack_type x) {
     if (empty(x))
       return x;
 
     iterator bottom = begin(x);
-    // empy for loop used to reach the bottom of the stack
+    // empty for loop used to reach the bottom of the stack
     for (; bottom->next != end(); ++bottom)
       ;
     bottom->next = free_nodes;
