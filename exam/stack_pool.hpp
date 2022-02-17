@@ -141,7 +141,6 @@ class _iterator {
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-// //
 
 /*---------------------------------------------------------------------------*\
                         Class template stack_pool<T,N>
@@ -356,4 +355,30 @@ class stack_pool {
     free_nodes = x;
     return end();
   };
+
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // EXTRAS
+
+  /// This constructor is used whenever one wants to build a stack_pool object
+  /// and create immediately a stack by means of an initializer_list.\n
+  /// example of use: \n
+  /// std::size_t head;\n
+  /// stack_pool<int, std::size_t> pool({1,2,3},head)
+  stack_pool(std::initializer_list<T> list, stack_type& a):stack_pool() {
+    a=end();
+    a=add_stack(list,a);
+  }
+
+  /// This method provide a fast way to push multiple item on top of the given
+  /// stack by means of a container, as instance std::vector<T>\n
+  /// example of use: \n
+  /// std::vector<int> inizialier{1,2,3,4};\n
+  /// std::size_t head;\n
+  /// l=  pool.add_stack(inizialier,head);
+  template <typename L>
+  stack_type add_stack(L list, stack_type head) {
+    for (auto&& x : list)
+      head = push(std::move(x), head);
+    return head;
+  }
 };
