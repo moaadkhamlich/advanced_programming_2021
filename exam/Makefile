@@ -25,6 +25,9 @@ check: tests.x
 %.o: %.cpp
 	$(CXX) $< -o $@ $(CXXFLAGS) -c
 
+docs: stack_pool.hpp
+	cd docs && doxygen Doxyfile
+
 format: $(SRC)
 	@clang-format -i $^ -verbose || echo "Please install clang-format to run this command"
 
@@ -37,6 +40,7 @@ clean:
 
 distclean: clean
 	$(RM) $(EXE)
+	$(RM) -r docs/html docs/latex
 	$(RM) *~
 
 tests.x : tests_main.o tests.o
